@@ -3,16 +3,19 @@ defmodule Day01 do
     input
     |> String.split("\n", trim: true)
     |> Enum.map(fn
-      <<"L", distance::binary>> -> {:left, String.to_integer(distance)}
-      <<"R", distance::binary>> -> {:right, String.to_integer(distance)}
+      <<"L", distance::binary>> -> -1 * String.to_integer(distance)
+      <<"R", distance::binary>> -> String.to_integer(distance)
     end)
   end
 
   def part1(rotations) do
     rotations
-    |> Enum.reduce([50], fn {direction, distance}, [dial | _] = seen ->
-      steps = rotate(dial, distance, direction)
-      [List.last(steps) | seen]
+    |> Enum.reduce([50], fn distance, [dial | _] = seen ->
+      r = rem(dial + distance, 100)
+
+      new_dial = if r < 0, do: 100 + r, else: r
+
+      [new_dial | seen]
     end)
     |> Enum.count(&(&1 == 0))
   end
@@ -20,28 +23,23 @@ defmodule Day01 do
   def part2(rotations) do
     {_dial, clicks} =
       rotations
-      |> Enum.reduce({50, 0}, fn {direction, distance}, {dial, clicks} ->
-        steps = rotate(dial, distance, direction)
-        {List.last(steps), clicks + Enum.count(steps, &(&1 == 0))}
+      |> Enum.reduce({50, 0}, fn distance, {dial, clicks} ->
+        x = dial + distance
+        r = rem(x, 100)
+
+        new_dial = if r < 0, do: 100 + r, else: r
+
+        new_clicks =
+          if x <= 0 and dial > 0 do
+            1 + abs(div(x, 100))
+          else
+            abs(div(x, 100))
+          end
+
+        {new_dial, clicks + new_clicks}
       end)
 
     clicks
-  end
-
-  def rotate(dial, distance, :right) when distance >= 1 do
-    Enum.map((dial + 1)..(dial + distance), fn i -> rem(i, 100) end)
-  end
-
-  def rotate(dial, distance, :left) when distance >= 1 do
-    Enum.map((dial - 1)..(dial - distance)//-1, fn i ->
-      r = rem(i, 100)
-
-      if r < 0 do
-        100 + r
-      else
-        r
-      end
-    end)
   end
 end
 
